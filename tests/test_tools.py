@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import tempfile
 import unittest
@@ -25,7 +26,10 @@ class ToolTests(unittest.TestCase):
 
     def test_create_nested_utf8_file_and_refuse_overwrite(self) -> None:
         result = self.execute("create_file", path="notes/report.txt", content="caf\u00e9\n")
-        self.assertEqual(result, {"ok": True, "result": {"path": "notes/report.txt", "bytes_written": 6}})
+        self.assertEqual(result, {"ok": True, "result": {
+            "path": "notes/report.txt", "bytes_written": 6,
+            "sha256": hashlib.sha256("caf\u00e9\n".encode()).hexdigest(),
+        }})
         self.assertEqual((self.workspace / "notes/report.txt").read_bytes(), b"caf\xc3\xa9\n")
         result = self.execute("create_file", path="notes/report.txt", content="replacement")
         self.assertFalse(result["ok"])
@@ -135,10 +139,19 @@ class ToolTests(unittest.TestCase):
         request = httpx.Request("POST", "https://api.tavily.com/search")
         post.return_value = httpx.Response(401, request=request, text="test-secret-key private response")
         result = self.execute("web_search", query="test", max_results=1)
-        self.assertEqual(result, {"ok": False, "error": "Search service returned HTTP 401."})
+        self.assertEqual(result, {
+            "ok": False, "error": "Search service returned HTTP 401.",
+            "code": "authentication_failed", "retryable": False, "attempts": 1,
+        })
+        self.assertEqual(post.call_count, 1)
+        post.reset_mock()
         post.side_effect = httpx.ReadTimeout("test-secret-key")
         result = self.execute("web_search", query="test", max_results=1)
-        self.assertEqual(result, {"ok": False, "error": "Search request timed out."})
+        self.assertEqual(result, {
+            "ok": False, "error": "Search request timed out.",
+            "code": "timeout", "retryable": True, "attempts": 2,
+        })
+        self.assertEqual(post.call_count, 2)
 
     @patch("goal_agent.tools.httpx.post")
     def test_malformed_search_response_is_handled(self, post) -> None:
@@ -157,7 +170,95 @@ class ToolTests(unittest.TestCase):
             {"title": None, "url": "https://example.com", "content": None},
         ]})
         result = self.execute("web_search", query="test", max_results=5)
-        self.assertEqual(result["result"]["sources"], [{"title": "", "url": "https://example.com", "snippet": ""}])
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["code"], "no_results")
+        self.assertFalse(result["retryable"])
+
+    def test_read_file_returns_matching_content_and_hash(self) -> None:
+        created = self.execute("create_file", path="notes/report.md", content="caf\u00e9\n")
+        result = self.execute("read_file", path="notes\\report.md")
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["result"], {
+            "path": "notes/report.md", "content": "caf\u00e9\n", "bytes_read": 6,
+            "sha256": created["result"]["sha256"],
+        })
+
+    def test_read_file_rejects_missing_invalid_oversized_and_escaping_files(self) -> None:
+        (self.workspace / "binary.txt").write_bytes(b"\xff")
+        (self.workspace / "huge.txt").write_bytes(b"a" * 101)
+        (self.workspace / "directory").mkdir()
+        for path, code in [
+            ("missing.txt", "file_not_found"), ("binary.txt", "invalid_file"),
+            ("huge.txt", "file_too_large"), ("directory", "invalid_file"),
+            ("../outside.txt", "invalid_arguments"), ("C:\\outside.txt", "invalid_arguments"),
+        ]:
+            with self.subTest(path=path):
+                result = self.execute("read_file", path=path)
+                self.assertFalse(result["ok"])
+                self.assertEqual(result["code"], code)
+
+    def test_read_file_rejects_file_and_directory_symlinks(self) -> None:
+        outside = Path(self.temp.name) / "outside"
+        outside.mkdir()
+        (outside / "private.txt").write_text("private", encoding="utf-8")
+        try:
+            (self.workspace / "link").symlink_to(outside, target_is_directory=True)
+            (self.workspace / "link.txt").symlink_to(outside / "private.txt")
+        except (OSError, NotImplementedError):
+            self.skipTest("This OS/user cannot create symbolic links.")
+        for path in ("link/private.txt", "link.txt"):
+            result = self.execute("read_file", path=path)
+            self.assertFalse(result["ok"])
+            self.assertIn("Symbolic", result["error"])
+
+    @patch("goal_agent.tools.httpx.post")
+    def test_cancel_and_expired_deadline_prevent_tools(self, post) -> None:
+        self.tools.configure_runtime(cancel=lambda: True)
+        result = self.execute("create_file", path="cancelled.txt", content="not written")
+        self.assertEqual(result["code"], "cancelled")
+        self.assertFalse((self.workspace / "cancelled.txt").exists())
+        self.tools.configure_runtime(deadline=0.0)
+        result = self.execute("web_search", query="test", max_results=1)
+        self.assertEqual(result["code"], "deadline_exceeded")
+        post.assert_not_called()
+
+    @patch("goal_agent.tools.time.monotonic", return_value=100.0)
+    @patch("goal_agent.tools.httpx.post")
+    def test_request_timeout_is_capped_by_remaining_budget(self, post, monotonic) -> None:
+        request = httpx.Request("POST", "https://api.tavily.com/search")
+        post.return_value = httpx.Response(200, request=request, json={"results": [
+            {"url": "https://example.com", "content": "evidence"},
+        ]})
+        self.tools.configure_runtime(deadline=102.0)
+        self.assertTrue(self.execute("web_search", query="test", max_results=1)["ok"])
+        self.assertEqual(post.call_args.kwargs["timeout"].read, 2.0)
+        self.assertEqual(post.call_args.kwargs["timeout"].connect, 2.0)
+
+    @patch("goal_agent.tools.time.sleep")
+    @patch("goal_agent.tools.httpx.post")
+    def test_transient_failure_retries_but_cancel_stops_backoff(self, post, sleep) -> None:
+        request = httpx.Request("POST", "https://api.tavily.com/search")
+        post.side_effect = [httpx.Response(429, request=request), httpx.Response(
+            200, request=request, json={"results": [{"url": "https://example.com", "content": "evidence"}]},
+        )]
+        result = self.execute("web_search", query="test", max_results=1)
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["result"]["attempts"], 2)
+        self.assertEqual(post.call_count, 2)
+        post.reset_mock()
+        post.side_effect = httpx.ReadTimeout("private")
+        cancelled = False
+
+        def cancel_during_backoff(_seconds):
+            nonlocal cancelled
+            cancelled = True
+
+        sleep.side_effect = cancel_during_backoff
+        self.tools.configure_runtime(cancel=lambda: cancelled)
+        result = self.execute("web_search", query="test", max_results=1)
+        self.assertEqual(result["code"], "cancelled")
+        self.assertEqual(result["attempts"], 1)
+        self.assertEqual(post.call_count, 1)
 
 
 if __name__ == "__main__":

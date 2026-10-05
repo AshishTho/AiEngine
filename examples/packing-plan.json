@@ -1,0 +1,17 @@
+{
+  "schema_version": 2,
+  "goal": "Create a travel packing checklist in packing.md with Clothing and Documents headings.",
+  "demo": false,
+  "model": "gpt-4.1-mini",
+  "plan": {
+    "supported": true,
+    "unsupported_reason": "",
+    "minimum_sources": 0,
+    "expected_artifacts": [
+      {"path": "packing.md", "required_sections": ["Clothing", "Documents"], "min_sources": 0}
+    ],
+    "steps": [
+      {"description": "Create packing.md containing a useful travel checklist under Clothing and Documents headings.", "tool": "create_file"}
+    ]
+  }
+}

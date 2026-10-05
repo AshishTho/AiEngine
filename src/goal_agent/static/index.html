@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>AiEngine · Local agent workspace</title>
+  <style nonce="__CSP_NONCE__">
+    :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#15253c;background:#f4f7fb;font-synthesis:none;--line:#dce4ef;--muted:#586a83;--blue:#2457d6;--navy:#142943;--green:#087653}
+    *{box-sizing:border-box}body{margin:0}button,textarea,input{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.5}button:focus-visible,textarea:focus-visible,input:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #83a7ff;outline-offset:3px}button{border:1px solid var(--line);border-radius:9px;padding:10px 15px;background:white;color:var(--navy);font-weight:650;font-size:13px;transition:background .15s}button:hover:enabled{background:#edf3ff}button.primary{background:var(--blue);color:white;border-color:var(--blue)}button.primary:hover:enabled{background:#1645b9}button.danger{color:#a93235;border-color:#edc7c8}button.compact{padding:7px 11px;font-size:12px}h1,h2,h3,p{margin:0}h1{font-size:24px;letter-spacing:-.7px;line-height:1.25}h2{font-size:15px;letter-spacing:-.2px}h3{font-size:13px}small,.subtle{color:var(--muted)}small{font-size:12px;line-height:1.5}.topbar{background:var(--navy);color:white;padding:19px 32px;display:flex;justify-content:space-between;gap:20px;align-items:center}.brand{display:flex;align-items:center;gap:11px;font-weight:750;font-size:19px;letter-spacing:-.5px}.mark{width:32px;height:32px;display:grid;place-items:center;background:#356be8;border-radius:9px;font-size:17px}.top-note{font-size:12px;color:#c3cfe0;display:flex;align-items:center;gap:7px}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#73d7b6}.shell{max-width:1390px;margin:auto;padding:32px;display:grid;grid-template-columns:325px minmax(0,1fr);gap:26px}.sidebar,.main{min-width:0;display:flex;flex-direction:column;gap:20px}.card{background:white;border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:0 2px 4px #13294303}.eyebrow{font-size:11px;letter-spacing:1.4px;font-weight:750;text-transform:uppercase;color:var(--blue);margin-bottom:9px}.card-head{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:17px}.intro{font-size:13px;color:var(--muted);line-height:1.65;margin-top:8px}.goal-label{display:block;font-size:12px;font-weight:650;margin:20px 0 8px}textarea{width:100%;min-height:158px;resize:vertical;border:1px solid #cdd8e6;border-radius:9px;padding:12px;line-height:1.6;font-size:13px;color:var(--navy);background:#fafcff}textarea::placeholder{color:#78899e}.checkbox{display:flex;align-items:flex-start;gap:8px;font-size:12px;line-height:1.5;color:var(--muted);margin:13px 0 17px}.checkbox input{accent-color:var(--blue);margin:3px 0 0}.stack{display:flex;flex-direction:column;gap:8px}.actions{display:flex;gap:8px;flex-wrap:wrap}.history{display:flex;flex-direction:column;gap:7px;max-height:430px;overflow:auto}.history-item{padding:12px;text-align:left;display:flex;flex-direction:column;gap:7px;font-weight:500}.history-item.selected{background:#edf3ff;border-color:#91aeee}.history-goal{font-size:12px;line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.history-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10px;color:var(--muted)}.badge{font-size:10px;font-weight:750;border-radius:5px;padding:4px 7px;background:#eef2f7;color:#4d607b;white-space:nowrap;letter-spacing:.3px;text-transform:uppercase}.badge.active{background:#e7efff;color:#204fbc}.badge.good{background:#e6f5ee;color:#096747}.badge.bad{background:#fdecee;color:#a4293d}.run-head{display:flex;justify-content:space-between;align-items:flex-start;gap:22px}.run-title{font-size:22px;line-height:1.45;letter-spacing:-.6px;overflow-wrap:anywhere;margin-bottom:10px}.run-id{font:11px ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere;color:var(--muted)}.run-actions{margin-top:21px;padding-top:18px;border-top:1px solid var(--line);justify-content:space-between;align-items:center}.notice{font-size:12px;line-height:1.65;color:var(--muted);max-width:445px}.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--line);margin:23px -22px -22px}.metric{padding:18px 22px;border-right:1px solid var(--line)}.metric:last-child{border:0}.metric-name{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:650;margin-bottom:6px}.metric-value{font-size:20px;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-.5px}.metric-note{font-size:10px;color:var(--muted);margin-top:4px}.two-col{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:20px}.step-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:0}.step{display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px;padding:0 0 22px;position:relative}.step:last-child{padding-bottom:0}.step:not(:last-child):before{content:"";position:absolute;left:13px;top:29px;bottom:4px;width:1px;background:var(--line)}.step-number{width:28px;height:28px;border-radius:50%;background:#edf2f9;color:#62738a;display:grid;place-items:center;font-size:11px;font-weight:750}.step-number.good{background:#e6f5ee;color:var(--green)}.step-number.active{background:#e8efff;color:var(--blue)}.step-description{font-size:13px;line-height:1.6;overflow-wrap:anywhere}.step-meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:7px}.tool{font-size:10px;color:#60728c;background:#f4f6fa;padding:3px 6px;border-radius:4px;font-family:ui-monospace,Consolas,monospace}.step-summary{font-size:12px;color:var(--muted);line-height:1.6;margin-top:8px;white-space:pre-wrap;overflow-wrap:anywhere}.empty{font-size:13px;line-height:1.65;color:var(--muted);padding:12px 0}.welcome{padding:58px 42px;display:flex;flex-direction:column;justify-content:center;min-height:370px;background:linear-gradient(135deg,#fff 60%,#edf3ff)}.welcome-icon{font-size:30px;line-height:1;display:grid;place-items:center;width:64px;height:64px;background:#eaf0ff;color:var(--blue);border-radius:17px;margin-bottom:24px}.welcome h1{font-size:30px;max-width:470px}.welcome p{font-size:14px;line-height:1.85;color:var(--muted);max-width:500px;margin-top:15px}.flow{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px;color:#4f6380;font-size:11px}.flow span{border:1px solid #d7e1f0;background:white;border-radius:6px;padding:7px 10px}.verify-box{border:1px solid var(--line);border-radius:10px;background:#f8fafc;padding:16px;margin-bottom:15px}.verify-title{font-size:13px;font-weight:700;margin-bottom:7px}.verify-body{font-size:12px;line-height:1.65;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere}.checks{list-style:none;margin:12px 0 0;padding:0}.checks li{font-size:12px;line-height:1.65;display:flex;gap:9px;padding:6px 0;overflow-wrap:anywhere}.check-symbol{flex:0 0 13px;color:var(--green)}.artifact{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e8edf4}.artifact:last-child{border:0;padding-bottom:0}.artifact-name{font-size:12px;line-height:1.55;font-family:ui-monospace,Consolas,monospace;overflow-wrap:anywhere}.artifact-icon{color:var(--blue);font-size:10px;font-weight:750;letter-spacing:.7px;margin-bottom:3px}.error{background:#fff0f1;color:#9f2738;border:1px solid #f2c6cb;border-radius:10px;padding:13px 16px;font-size:13px;line-height:1.6;overflow-wrap:anywhere}.summary{font-size:13px;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}.log{max-height:270px;overflow:auto;margin-top:13px}.event{border-left:2px solid #dce5f5;padding:3px 0 10px 11px;margin-bottom:7px;font-size:11px;line-height:1.65;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere}details{margin-top:14px}summary{cursor:pointer;font-size:11px;font-weight:650;color:var(--muted)}pre{font-size:11px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto;background:#f6f8fb;padding:12px;border-radius:8px}.footer{font-size:11px;color:#74839a;line-height:1.75;padding:0 4px}.muted-label{font-size:11px;color:var(--muted)}[hidden]{display:none!important}
+    .block{display:block}.column-stack{gap:20px}.spaced-card{margin-top:20px}.artifact-foot{padding:12px 0 0}
+    @media(max-width:1080px){.shell{grid-template-columns:295px minmax(0,1fr);padding:24px;gap:20px}.two-col{grid-template-columns:1fr}.run-head{flex-direction:column;gap:12px}.metric{padding:17px}.metric-value{font-size:18px}}@media(max-width:740px){.topbar{padding:16px 20px}.top-note{font-size:10px}.shell{grid-template-columns:1fr;padding:20px;gap:20px}.sidebar{gap:16px}.history{max-height:200px}.welcome{padding:30px;min-height:280px}.welcome h1{font-size:25px}.card{padding:19px}.metrics{margin:20px -19px -19px}.metric{padding:15px 12px}.metric-name{font-size:9px}.run-title{font-size:20px}.two-col{gap:16px}.main{gap:16px}}
+  </style>
+</head>
+<body>
+  <header class="topbar"><div class="brand"><span class="mark" aria-hidden="true">A</span>AiEngine</div><div class="top-note"><span class="dot" aria-hidden="true"></span>Local agent workspace</div></header>
+  <div class="shell">
+    <aside class="sidebar" aria-label="Goals and history">
+      <section class="card">
+        <div class="eyebrow">From goal to result</div><h1>What should we do?</h1>
+        <p class="intro">Describe the outcome. Review the plan, follow each step, and inspect the evidence.</p>
+        <form id="goal-form">
+          <label class="goal-label" for="goal">Your goal</label>
+          <textarea id="goal" maxlength="12000" required placeholder="Research a topic and save a cited report with a summary and key findings."></textarea>
+          <label class="checkbox"><input id="demo" type="checkbox"><span>Use offline demo<small class="block">Try a fixed example without API keys.</small></span></label>
+          <div class="stack"><button id="preview" class="primary" type="submit">Preview plan</button><button id="run-now" type="submit">Plan and run</button></div>
+        </form>
+      </section>
+      <section class="card"><div class="card-head"><h2>Run history</h2><span class="muted-label" id="history-count">0 runs</span></div><div id="history" class="history"><p class="empty">No runs yet. Start with a goal above.</p></div></section>
+      <p class="footer">For one user on this computer. The launch link is your session key. Execution uses the configured local workspace and budgets.</p>
+    </aside>
+    <main class="main">
+      <div id="error" class="error" role="alert" hidden></div>
+      <section id="welcome" class="card welcome"><div class="welcome-icon" aria-hidden="true">↗</div><div class="eyebrow">A clear path to done</div><h1>Turn an idea into a result you can check.</h1><p>Your agent can search the web and create files. Every run keeps its plan, progress, usage, and verification results together.</p><div class="flow" aria-label="Workflow"><span>01 · Plan</span><span>02 · Execute</span><span>03 · Verify</span></div></section>
+      <section id="run-card" class="card" hidden>
+        <div class="run-head"><div><div class="eyebrow">Current run</div><h1 id="run-goal" class="run-title"></h1><div id="run-id" class="run-id"></div></div><span id="run-status" class="badge" role="status"></span></div>
+        <div class="actions run-actions"><p id="run-notice" class="notice"></p><div class="actions"><button id="execute" class="primary compact" type="button">Execute plan</button><button id="resume" class="compact" type="button">Resume</button><button id="cancel" class="danger compact" type="button">Cancel run</button></div></div>
+        <div class="metrics"><div class="metric"><div class="metric-name">Tokens used</div><div id="tokens" class="metric-value">—</div><div id="token-note" class="metric-note">Model usage</div></div><div class="metric"><div class="metric-name">Elapsed time</div><div id="elapsed" class="metric-value">—</div><div class="metric-note">Execution duration</div></div><div class="metric"><div class="metric-name">Estimated cost</div><div id="cost" class="metric-value">—</div><div class="metric-note">Configured model pricing</div></div></div>
+      </section>
+      <div id="run-content" hidden>
+        <div class="two-col">
+          <section class="card"><div class="card-head"><h2>Execution plan</h2><span id="step-count" class="muted-label"></span></div><ol id="steps" class="step-list"></ol><details id="expected-detail" hidden><summary>Expected outputs</summary><pre id="expected"></pre></details></section>
+          <div class="stack column-stack">
+            <section class="card"><div class="card-head"><h2>Outcome verification</h2><span id="verify-status" class="badge">Pending</span></div><div id="verification" class="verify-box"></div><ul id="checks" class="checks"></ul></section>
+            <section class="card"><div class="card-head"><h2>Files</h2><span id="file-count" class="muted-label">0 files</span></div><div id="artifacts"></div><p class="footer artifact-foot">Files are downloaded for your review.</p></section>
+          </div>
+        </div>
+        <section id="summary-card" class="card spaced-card" hidden><div class="card-head"><h2>Run summary</h2></div><div id="run-summary" class="summary"></div></section>
+        <section class="card spaced-card"><div class="card-head"><h2>Activity &amp; details</h2><span id="poll-status" class="muted-label" aria-live="polite">Refreshing automatically</span></div><div id="events" class="log"></div><details><summary>Usage and verification data</summary><pre id="raw-details"></pre></details></section>
+      </div>
+    </main>
+  </div>
+  <script nonce="__CSP_NONCE__">
+    "use strict";
+    const $ = id => document.getElementById(id);
+    const sessionKey = "aiengine-token:" + location.origin;
+    let token = new URLSearchParams(location.hash.slice(1)).get("token");
+    if (token) { sessionStorage.setItem(sessionKey, token); history.replaceState(null, "", location.pathname); }
+    else token = sessionStorage.getItem(sessionKey);
+    let selected = sessionStorage.getItem("aiengine-run:" + location.origin), detail = null, busy = false, pollCount = 0, lastHistory = "";
+    const activeStatuses = new Set(["queued", "planning", "running", "executing", "verifying", "cancelling", "pending"]);
+    const readyStatuses = new Set(["planned", "plan_ready", "ready", "plan_only"]);
+    const doneStatuses = new Set(["completed", "success", "succeeded", "verified"]);
+    const badStatuses = new Set(["failed", "error", "cancelled", "canceled", "blocked", "interrupted", "incomplete", "budget_exceeded", "verification_failed"]);
+    function node(tag, text, cls) { const result = document.createElement(tag); if (text !== undefined) result.textContent = text; if (cls) result.className = cls; return result; }
+    function showError(message) { $("error").textContent = message; $("error").hidden = !message; }
+    function badge(element, status) { const value = String(status || "pending").toLowerCase(); element.textContent = value.replaceAll("_", " "); element.className = "badge" + (activeStatuses.has(value) ? " active" : doneStatuses.has(value) || value === "passed" ? " good" : badStatuses.has(value) ? " bad" : ""); }
+    function compact(value) { return typeof value === "string" ? value : JSON.stringify(value, null, 2); }
+    function runId(run) { return run.run_id || run.id; }
+    function finite(value) { return value !== undefined && value !== null && Number.isFinite(Number(value)); }
+    async function api(path, options = {}) {
+      if (!token) throw new Error("Open the complete launch URL printed in your terminal to connect to this local workspace.");
+      const response = await fetch(path, { ...options, headers: { "Authorization": "Bearer " + token, ...(options.body ? { "Content-Type": "application/json" } : {}), ...(options.headers || {}) }, cache: "no-store", credentials: "omit", redirect: "error" });
+      if (!response.ok) { let error; try { error = (await response.json()).error; } catch { error = "Request failed (" + response.status + ")."; } throw new Error(error || "Request failed."); }
+      return response;
+    }
+    async function json(path, options) { return (await api(path, options)).json(); }
+    function selectRun(id) { selected = id; detail = null; sessionStorage.setItem("aiengine-run:" + location.origin, id); showError(""); loadSelected().catch(error => showError(error.message)); loadHistory().catch(error => showError(error.message)); }
+    async function loadHistory() {
+      const payload = await json("/api/runs");
+      const runs = Array.isArray(payload) ? payload : (payload.runs || []);
+      const fingerprint = JSON.stringify({ runs, selected }); if (fingerprint === lastHistory) return; lastHistory = fingerprint;
+      $("history-count").textContent = runs.length + (runs.length === 1 ? " run" : " runs");
+      $("history").replaceChildren();
+      if (!runs.length) $("history").append(node("p", "No runs yet. Start with a goal above.", "empty"));
+      for (const run of runs) {
+        const id = runId(run); if (!id) continue;
+        const button = node("button", undefined, "history-item" + (id === selected ? " selected" : "")); button.type = "button";
+        button.append(node("span", run.goal || id, "history-goal"));
+        const meta = node("span", undefined, "history-meta"), status = node("span"); badge(status, run.status);
+        const when = run.created_at || run.started_at; const date = when ? new Date(when) : null;
+        meta.append(status, node("span", date && !isNaN(date) ? date.toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : String(id).slice(0, 13)));
+        button.append(meta); button.addEventListener("click", () => selectRun(id)); $("history").append(button);
+      }
+    }
+    function renderSteps(run) {
+      const plan = run.plan || {}, steps = Array.isArray(run.steps) && run.steps.length ? run.steps : (Array.isArray(plan) ? plan : (plan.steps || []));
+      const completed = run.steps || run.step_results || run.completed_steps || [];
+      $("steps").replaceChildren(); $("step-count").textContent = steps.length ? steps.length + " steps" : "";
+      if (!steps.length) $("steps").append(node("li", "The plan will appear here as soon as it is ready.", "empty"));
+      steps.forEach((step, index) => {
+        let outcome = Array.isArray(completed) ? completed.find(item => item && typeof item === "object" && (item.step_index === index || item.step_number === index + 1 || (step.id && item.step_id === step.id))) : completed[index];
+        if (!outcome && Array.isArray(completed)) outcome = completed[index];
+        outcome = typeof outcome === "object" && outcome ? outcome : {};
+        const status = outcome.status || step.status || "pending";
+        const item = node("li", undefined, "step"), circle = node("span", doneStatuses.has(status) ? "✓" : String(index + 1), "step-number" + (doneStatuses.has(status) ? " good" : activeStatuses.has(status) && status !== "pending" ? " active" : ""));
+        circle.setAttribute("aria-hidden", "true");
+        const content = node("div"), meta = node("div", undefined, "step-meta"), state = node("span"); badge(state, status);
+        content.append(node("p", typeof step === "string" ? step : (step.description || step.title || "Step " + (index + 1)), "step-description"));
+        meta.append(node("span", step.tool || "reason", "tool"), state); content.append(meta);
+        const summary = outcome.summary || outcome.error; if (summary) content.append(node("p", compact(summary), "step-summary"));
+        item.append(circle, content); $("steps").append(item);
+      });
+      const expected = plan.expected_artifacts || plan.expected_outputs || plan.acceptance_criteria;
+      $("expected-detail").hidden = !expected || !Object.keys(expected).length;
+      $("expected").textContent = expected ? compact(expected) : "";
+    }
+    function renderVerification(run) {
+      const verification = run.verification;
+      $("verification").replaceChildren(); $("checks").replaceChildren();
+      if (!verification) {
+        badge($("verify-status"), "pending");
+        $("verification").append(node("div", "Evidence comes first", "verify-title"), node("div", "After execution, the agent checks the requested outputs, required sections, and links against retrieved sources.", "verify-body")); return;
+      }
+      const passed = verification.passed === true || verification.status === "passed" || verification.status === "verified";
+      const state = verification.status || (passed ? "passed" : "failed"); badge($("verify-status"), state);
+      const message = verification.summary || verification.message || (passed ? "The configured outcome checks passed." : "Review the checks below before relying on this result.");
+      $("verification").append(node("div", passed ? "Outcome checks passed" : "Verification results", "verify-title"), node("div", compact(message) + (verification.scope ? "\n\n" + verification.scope : ""), "verify-body"));
+      const checks = verification.checks || verification.errors || verification.issues || [];
+      for (const check of (Array.isArray(checks) ? checks : Object.values(checks))) {
+        const good = typeof check === "object" && (check.passed === true || check.status === "passed");
+        const item = node("li"), symbol = node("span", good ? "✓" : "·", "check-symbol"); symbol.setAttribute("aria-hidden", "true");
+        const text = typeof check === "string" ? check : (check.detail || check.message || check.description || check.name || compact(check));
+        item.append(symbol, node("span", (typeof check === "object" && check.path ? check.path + ": " : "") + text)); $("checks").append(item);
+      }
+    }
+    function artifactPaths(run) {
+      const values = run.artifacts || run.files || run.created_files || run.output_files || [];
+      return [...new Set((Array.isArray(values) ? values : Object.keys(values)).map(item => typeof item === "string" ? item : item.path || item.relative_path || item.filename).filter(Boolean))];
+    }
+    function renderArtifacts(run) {
+      const paths = artifactPaths(run); $("artifacts").replaceChildren(); $("file-count").textContent = paths.length + (paths.length === 1 ? " file" : " files");
+      if (!paths.length) $("artifacts").append(node("p", "Created files will appear here.", "empty"));
+      for (const path of paths) {
+        const item = node("div", undefined, "artifact"), info = node("div"), download = node("button", "Download", "compact"); download.type = "button"; download.setAttribute("aria-label", "Download " + path);
+        info.append(node("div", "OUTPUT", "artifact-icon"), node("div", path, "artifact-name"));
+        const id = runId(run) || selected;
+        download.addEventListener("click", async () => { download.disabled = true; try { const response = await api("/api/runs/" + encodeURIComponent(id) + "/artifacts?path=" + encodeURIComponent(path)); const blob = await response.blob(); const url = URL.createObjectURL(blob); const link = node("a"); link.href = url; link.download = path.replaceAll("\\", "/").split("/").pop(); document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); } catch (error) { showError(error.message); } finally { download.disabled = false; } });
+        item.append(info, download); $("artifacts").append(item);
+      }
+    }
+    function render(run) {
+      detail = run; $("welcome").hidden = true; $("run-card").hidden = false; $("run-content").hidden = false;
+      const status = String(run.status || "pending").toLowerCase(), active = activeStatuses.has(status), ready = readyStatuses.has(status);
+      $("run-goal").textContent = run.goal || "Agent run"; $("run-id").textContent = runId(run) || selected; badge($("run-status"), status);
+      $("execute").hidden = !ready; $("execute").disabled = busy; $("cancel").hidden = !active; $("cancel").disabled = busy || status === "cancelling";
+      $("resume").hidden = active || ready || doneStatuses.has(status); $("resume").disabled = busy;
+      $("run-notice").textContent = run.error || run.stop_reason || (ready ? "Review the exact saved plan, then execute it when ready." : active ? "Progress updates automatically. Cancellation takes effect at the next safe checkpoint." : doneStatuses.has(status) ? "Review verification and download your results below." : "Inspect the result and activity. Resume can continue saved work.");
+      const usage = run.metrics || run.usage || {}, tokens = usage.total_tokens ?? (finite(usage.input_tokens) && finite(usage.output_tokens) ? Number(usage.input_tokens) + Number(usage.output_tokens) : null);
+      $("tokens").textContent = finite(tokens) ? Number(tokens).toLocaleString() : "—";
+      $("token-note").textContent = (usage.model || run.model || "Model usage") + (usage.usage_complete === false ? " · partial usage" : "");
+      const elapsed = usage.elapsed_seconds ?? run.elapsed_seconds ?? usage.duration_seconds;
+      $("elapsed").textContent = finite(elapsed) ? Number(elapsed) < 60 ? Number(elapsed).toFixed(1) + "s" : Math.floor(Number(elapsed) / 60) + "m " + Math.floor(Number(elapsed) % 60) + "s" : "—";
+      const cost = usage.estimated_cost_usd ?? usage.cost_usd ?? run.estimated_cost_usd;
+      $("cost").textContent = finite(cost) ? "$" + Number(cost).toFixed(4) : "—";
+      renderSteps(run); renderVerification(run); renderArtifacts(run);
+      const summary = run.summary || run.final_summary || run.result; $("summary-card").hidden = !summary; $("run-summary").textContent = summary ? compact(summary) : "";
+      const events = run.events || run.activity || (run.steps || []).flatMap((step, index) => (step.events || []).map(event => ({ message: "Step " + (step.number || index + 1) + " · " + event.tool + " · " + (event.ok ? "Succeeded" : "Failed"), details: event.error || event.result?.summary || event.result?.path }))); $("events").replaceChildren();
+      if (!events.length) $("events").append(node("p", "Step results and verification are saved with this run.", "empty"));
+      for (const event of events.slice(-30)) $("events").append(node("div", typeof event === "string" ? event : (event.timestamp ? event.timestamp + " · " : "") + (event.message || event.type || event.event || "Update") + (event.details ? "\n" + compact(event.details) : ""), "event"));
+      $("raw-details").textContent = compact({ usage, verification: run.verification || null, stop_reason: run.stop_reason || null });
+      $("poll-status").textContent = active ? "Live · refreshing automatically" : "Saved to this workspace";
+    }
+    async function loadSelected() { const id = selected; if (!id) return; const run = await json("/api/runs/" + encodeURIComponent(id)); if (selected === id && JSON.stringify(run) !== JSON.stringify(detail)) render(run); }
+    function setBusy(value) { busy = value; $("preview").disabled = value; $("run-now").disabled = value; if (detail) render(detail); }
+    $("demo").addEventListener("change", () => { $("goal").disabled = $("demo").checked; $("goal").required = !$("demo").checked; });
+    $("goal-form").addEventListener("submit", async event => {
+      event.preventDefault(); if (busy) return; showError(""); setBusy(true);
+      try { const result = await json("/api/runs", { method: "POST", body: JSON.stringify({ goal: $("demo").checked ? "Run the offline demo" : $("goal").value.trim(), plan_only: event.submitter?.id !== "run-now", demo: $("demo").checked }) }); selectRun(result.run_id); }
+      catch (error) { showError(error.message); } finally { setBusy(false); }
+    });
+    for (const action of ["execute", "resume", "cancel"]) $(action).addEventListener("click", async () => {
+      if (!selected || busy) return; setBusy(true); showError("");
+      try { const result = await json("/api/runs/" + encodeURIComponent(selected) + "/" + action, { method: "POST", body: "{}" }); if (result.run_id && result.run_id !== selected) selectRun(result.run_id); else await loadSelected(); await loadHistory(); }
+      catch (error) { showError(error.message); } finally { setBusy(false); }
+    });
+    async function refresh() {
+      try { if (pollCount % 4 === 0) await loadHistory(); await loadSelected(); pollCount += 1; }
+      catch (error) { showError(error.message); }
+      finally { if (token) setTimeout(refresh, document.hidden ? 5000 : 1500); }
+    }
+    refresh();
+  </script>
+</body>
+</html>

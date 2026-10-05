@@ -3,14 +3,16 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import tempfile
 import unittest
 from collections import deque
 from pathlib import Path
 
-from goal_agent.models import Limits, Plan, Step
+from goal_agent.models import ArtifactExpectation, Limits, Plan, Step
 from goal_agent.runner import Agent
+from goal_agent.tools import ToolError, ToolRegistry
 
 
 def function_call(name: str, arguments: dict | str, call_id: str) -> dict:
@@ -77,13 +79,19 @@ class FakeTools:
                 "additionalProperties": False,
             },
         },
+        {
+            "type": "function", "name": "read_file", "description": "Read a created file",
+            "parameters": {"type": "object", "properties": {"path": {"type": "string"}},
+                           "required": ["path"], "additionalProperties": False},
+        },
     ]
 
     def __init__(self) -> None:
         self.calls: list[tuple[str, dict]] = []
+        self.files: dict[str, str] = {}
 
     def execute(self, name: str, args_json: str) -> dict:
-        if name not in {"web_search", "create_file"}:
+        if name not in {"web_search", "create_file", "read_file"}:
             return {"ok": False, "error": f"Unknown tool: {name}"}
         try:
             arguments = json.loads(args_json)
@@ -98,10 +106,30 @@ class FakeTools:
             return {
                 "ok": True,
                 "result": {
-                    "results": [{"title": "Example source", "url": "https://example.com/source", "content": "Source evidence: blue widgets."}],
+                    "query": arguments.get("query"),
+                    "sources": [{"title": "Example source", "url": "https://example.com/source", "snippet": "Source evidence: blue widgets."}],
                 },
             }
-        return {"ok": True, "result": {"path": arguments.get("path"), "bytes_written": len(arguments.get("content", ""))}}
+        try:
+            path = "/".join(ToolRegistry._path_parts(arguments.get("path")))
+        except ToolError as exc:
+            return {"ok": False, "error": str(exc)}
+        if name == "create_file":
+            if path in self.files:
+                return {"ok": False, "error": "File already exists.", "code": "file_exists"}
+            content = arguments.get("content")
+            if not isinstance(content, str):
+                return {"ok": False, "error": "content must be a string."}
+            self.files[path] = content
+            encoded = content.encode("utf-8")
+            return {"ok": True, "result": {"path": path, "bytes_written": len(encoded),
+                                             "sha256": hashlib.sha256(encoded).hexdigest()}}
+        if path not in self.files:
+            return {"ok": False, "error": "File does not exist.", "code": "file_not_found"}
+        encoded = self.files[path].encode("utf-8")
+        return {"ok": True, "result": {"path": path, "content": self.files[path],
+                                         "bytes_read": len(encoded),
+                                         "sha256": hashlib.sha256(encoded).hexdigest()}}
 
 
 class AgentTests(unittest.TestCase):
@@ -117,11 +145,17 @@ class AgentTests(unittest.TestCase):
         return agent, backend
 
     def test_search_then_file_preserves_tool_results_in_context(self) -> None:
-        plan = Plan(steps=[Step(description="Research widgets", tool="web_search"), Step(description="Write a report", tool="create_file")])
+        plan = Plan(
+            steps=[Step(description="Research widgets", tool="web_search"),
+                   Step(description="Write a report", tool="create_file")],
+            expected_artifacts=[ArtifactExpectation(path="report.md", required_sections=["Summary"], min_sources=1)],
+            minimum_sources=1,
+        )
+        content = "# Summary\n\nBlue widgets: https://example.com/source"
         agent, backend = self.agent(plan, [
             [function_call("web_search", {"query": "widgets"}, "search")],
             [finish("research_done", summary="Found blue widgets")],
-            [function_call("create_file", {"path": "report.md", "content": "Blue widgets: https://example.com/source"}, "write")],
+            [function_call("create_file", {"path": "report.md", "content": content}, "write")],
             [finish("write_done")],
         ])
 
@@ -129,7 +163,14 @@ class AgentTests(unittest.TestCase):
 
         self.assertEqual(state["status"], "completed")
         self.assertEqual(state["tool_calls"], 2)
-        self.assertEqual([name for name, _ in self.tools.calls], ["web_search", "create_file"])
+        self.assertEqual([name for name, _ in self.tools.calls],
+                         ["web_search", "read_file", "create_file", "read_file"])
+        self.assertEqual(self.tools.files["report.md"], content)
+        self.assertTrue(state["verification"]["passed"])
+        self.assertTrue(all(check["passed"] for check in state["verification"]["checks"]))
+        self.assertEqual(state["verification"]["source_urls"], ["https://example.com/source"])
+        self.assertEqual(state["verification"]["artifacts"][0]["sha256"],
+                         hashlib.sha256(content.encode("utf-8")).hexdigest())
         self.assertEqual(len(backend.histories), 4)
         self.assertIn("Source evidence: blue widgets.", json.dumps(backend.histories[2]))
         self.assertIn("https://example.com/source", json.dumps(backend.histories[2]))
@@ -180,7 +221,11 @@ class AgentTests(unittest.TestCase):
         self.assertEqual(len(self.tools.calls), 2)
 
     def test_explicit_failure_stops_dependent_steps(self) -> None:
-        plan = Plan(steps=[Step(description="Assess the request", tool="reason"), Step(description="Write a report", tool="create_file")])
+        plan = Plan(
+            steps=[Step(description="Assess the request", tool="reason"),
+                   Step(description="Write a report", tool="create_file")],
+            expected_artifacts=[ArtifactExpectation(path="report.md")],
+        )
         agent, backend = self.agent(plan, [[finish("failed", status="failed", summary="Insufficient information")]])
 
         state = agent.run("Assess and write a report")
@@ -211,7 +256,7 @@ class AgentTests(unittest.TestCase):
 
         state = agent.run("Research widgets")
 
-        self.assertEqual(state["status"], "failed")
+        self.assertEqual(state["status"], "budget_exceeded")
         self.assertEqual(state["tool_calls"], 1)
         self.assertEqual(len(self.tools.calls), 1)
         self.assertTrue(state.get("error"))

@@ -2,7 +2,7 @@
 
 import json
 
-from .models import Plan, Step
+from .models import ArtifactExpectation, Plan, Step
 from .tools import ToolRegistry
 
 
@@ -10,6 +10,8 @@ DEMO_GOAL = "Research Python's pathlib module and save a short note as pathlib-n
 
 
 class DemoBackend:
+    is_demo = True
+    model = "offline-demo"
     def __init__(self):
         self.turn = 0
 
@@ -17,7 +19,7 @@ class DemoBackend:
         return Plan(steps=[
             Step(description="Find the Python pathlib documentation.", tool="web_search"),
             Step(description="Save a brief note with a source link.", tool="create_file"),
-        ])
+        ], expected_artifacts=[ArtifactExpectation(path="pathlib-note.md", required_sections=["pathlib note"], min_sources=1)], minimum_sources=1)
 
     def respond(self, history: list[dict], tools: list[dict]) -> list[dict]:
         # Consume the preceding search observation, just as an LLM would.
@@ -40,6 +42,8 @@ class DemoBackend:
             )}),
             ("finish_step", {"status": "completed", "summary": "Created pathlib-note.md."}),
         ]
+        # Derive position from persisted call history so fresh processes can resume.
+        self.turn = sum(item.get("type") == "function_call" for item in history)
         name, arguments = script[self.turn]
         self.turn += 1
         return [{"type": "function_call", "name": name,

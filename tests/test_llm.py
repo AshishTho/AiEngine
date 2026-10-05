@@ -3,17 +3,20 @@
 from __future__ import annotations
 
 import json
+import tempfile
 import unittest
+from pathlib import Path
 
 import httpx
 from openai import OpenAI
 
 from goal_agent.llm import OpenAIBackend
-from goal_agent.models import AgentError, Plan
-from goal_agent.runner import FINISH_SCHEMA
+from goal_agent.models import AgentError, Plan, Pricing
+from goal_agent.runner import Agent, FINISH_SCHEMA
+from goal_agent.tools import ToolRegistry
 
 
-def response_body(output: list[dict], status: str = "completed") -> dict:
+def response_body(output: list[dict], status: str = "completed", usage: dict | None = None) -> dict:
     """A minimal Responses API response that the actual SDK deserializes."""
     return {
         "id": "resp_offline",
@@ -32,6 +35,7 @@ def response_body(output: list[dict], status: str = "completed") -> dict:
         "temperature": 1.0,
         "top_p": 1.0,
         "metadata": {},
+        "usage": usage,
     }
 
 
@@ -64,7 +68,11 @@ class OpenAIBackendTests(unittest.TestCase):
         return OpenAIBackend(client, "offline-model", max_output_tokens=1234)
 
     def test_plan_uses_strict_structured_output_and_parses_validated_plan(self):
-        document = {"steps": [{"description": "Think through the answer", "tool": "reason"}]}
+        document = {
+            "steps": [{"description": "Think through the answer", "tool": "reason"}],
+            "supported": True, "unsupported_reason": "",
+            "expected_artifacts": [], "minimum_sources": 0,
+        }
         backend = self.backend([response_body([text_message(json.dumps(document))])])
 
         plan = backend.plan("Explain a concept", 3, [FINISH_SCHEMA])
@@ -81,10 +89,18 @@ class OpenAIBackendTests(unittest.TestCase):
         self.assertEqual(output_format["type"], "json_schema")
         self.assertTrue(output_format["strict"])
         schema = output_format["schema"]
+        self.assertNotIn('"default":', json.dumps(schema))
         self.assertFalse(schema["additionalProperties"])
-        self.assertEqual(schema["required"], ["steps"])
+        self.assertEqual(set(schema["required"]), {
+            "steps", "supported", "unsupported_reason", "expected_artifacts", "minimum_sources",
+        })
         self.assertFalse(schema["$defs"]["Step"]["additionalProperties"])
         self.assertEqual(set(schema["$defs"]["Step"]["required"]), {"description", "tool"})
+        self.assertEqual(set(schema["$defs"]["Step"]["properties"]["tool"]["enum"]),
+                         {"web_search", "fetch_page", "create_file", "read_file", "reason"})
+        self.assertFalse(schema["$defs"]["ArtifactExpectation"]["additionalProperties"])
+        self.assertEqual(set(schema["$defs"]["ArtifactExpectation"]["required"]),
+                         {"path", "required_sections", "min_sources"})
 
     def test_executor_preserves_reasoning_function_calls_and_tool_results(self):
         reasoning = {
@@ -141,6 +157,46 @@ class OpenAIBackendTests(unittest.TestCase):
         backend = self.backend([response_body([], status="incomplete")])
         with self.assertRaisesRegex(AgentError, "incomplete"):
             backend.respond([], [FINISH_SCHEMA])
+
+    def test_usage_is_captured_per_response_and_missing_usage_does_not_reuse_previous(self):
+        usage = {"input_tokens": 12, "output_tokens": 5, "total_tokens": 17,
+                 "input_tokens_details": {"cached_tokens": 0},
+                 "output_tokens_details": {"reasoning_tokens": 0}}
+        backend = self.backend([response_body([], usage=usage), response_body([])])
+        backend.respond([], [FINISH_SCHEMA])
+        self.assertEqual(backend.last_usage, {"input_tokens": 12, "output_tokens": 5, "total_tokens": 17})
+        backend.respond([], [FINISH_SCHEMA])
+        self.assertIsNone(backend.last_usage)
+
+    def test_incomplete_response_usage_is_retained_in_run_cost_without_executing_partial_call(self):
+        plan = Plan.model_validate({"steps": [{"description": "Explain the concept", "tool": "reason"}]})
+        partial_call = {"type": "function_call", "id": "fc_partial", "call_id": "partial",
+                        "name": "finish_step", "arguments": '{"status":"completed","summary":"Done"}',
+                        "status": "completed"}
+        plan_usage = {"input_tokens": 10, "output_tokens": 20, "total_tokens": 30,
+                      "input_tokens_details": {"cached_tokens": 0},
+                      "output_tokens_details": {"reasoning_tokens": 0}}
+        partial_usage = {"input_tokens": 7, "output_tokens": 9, "total_tokens": 16,
+                         "input_tokens_details": {"cached_tokens": 0},
+                         "output_tokens_details": {"reasoning_tokens": 0}}
+        backend = self.backend([
+            response_body([text_message(plan.model_dump_json())], usage=plan_usage),
+            response_body([partial_call], status="incomplete", usage=partial_usage),
+        ])
+        with tempfile.TemporaryDirectory() as folder:
+            run_dir = Path(folder) / "run"
+            state = Agent(backend, ToolRegistry(run_dir / "artifacts", None), run_dir,
+                          pricing=Pricing(1.0, 2.0)).run("Explain the concept")
+        self.assertEqual(state["status"], "failed")
+        self.assertIn("incomplete", state["error"])
+        self.assertEqual(state["steps"][0]["events"], [])
+        self.assertEqual(state["tool_calls"], 0)
+        self.assertEqual(state["metrics"]["model_requests"], 2)
+        self.assertEqual(state["metrics"]["input_tokens"], 17)
+        self.assertEqual(state["metrics"]["output_tokens"], 29)
+        self.assertEqual(state["metrics"]["total_tokens"], 46)
+        self.assertTrue(state["metrics"]["usage_complete"])
+        self.assertAlmostEqual(state["metrics"]["estimated_cost_usd"], 75 / 1_000_000)
 
     def test_refusal_is_rejected_for_both_planning_and_execution(self):
         refusal = {
